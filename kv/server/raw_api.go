@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+
 	"github.com/pingcap-incubator/tinykv/proto/pkg/kvrpcpb"
 )
 
@@ -11,7 +12,24 @@ import (
 // RawGet return the corresponding Get response based on RawGetRequest's CF and Key fields
 func (server *Server) RawGet(_ context.Context, req *kvrpcpb.RawGetRequest) (*kvrpcpb.RawGetResponse, error) {
 	// Your Code Here (1).
-	return nil, nil
+	resp := &kvrpcpb.RawGetResponse{}
+	reader, err := server.storage.Reader(req.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	defer reader.Close()
+
+	val, err := reader.GetCF(req.Cf, req.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Value = val
+	if val == nil {
+		resp.NotFound = true
+	}
+	return resp, nil
 }
 
 // RawPut puts the target data into storage and returns the corresponding response
